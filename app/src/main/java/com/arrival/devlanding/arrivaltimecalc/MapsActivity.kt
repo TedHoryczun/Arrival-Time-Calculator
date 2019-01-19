@@ -1,10 +1,19 @@
 package com.arrival.devlanding.arrivaltimecalc
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Location
+import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.annotation.RequiresApi
 import android.support.v4.app.Fragment
+import android.support.v4.content.ContextCompat
 import android.util.Log
 import com.google.android.gms.common.api.Status
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.places.Place
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment
 import com.google.android.gms.location.places.ui.PlaceSelectionListener
@@ -17,21 +26,44 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsContract.view {
 
     private lateinit var mMap: GoogleMap
+    lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val LOCATION_REQUEST_CODE = 0
+    val presenter: MapsContract.presenter by lazy { MapsPresenter(this) }
 
+    val placeFragment: PlaceAutocompleteFragment by lazy {
+        fragmentManager
+            .findFragmentById(R.id.placesAutoCompleteFragment) as PlaceAutocompleteFragment
+    }
+    val mapFragment: SupportMapFragment by lazy {
+        supportFragmentManager
+            .findFragmentById(R.id.map) as SupportMapFragment
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         mapFragment.getMapAsync(this)
+        presenter.init()
+        if (isPermissionGranted(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    println("here is my location: ${location}")
+                }
+        } else {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
+        }
 
 
-        val placeFragment = fragmentManager
-            .findFragmentById(R.id.placesAutoCompleteFragment) as PlaceAutocompleteFragment
+    }
+
+    override fun bindListeners() {
         placeFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(p0: Place?) {
                 Log.i("Place Selected", p0?.name.toString())
@@ -42,22 +74,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
         })
-
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
         val sydney = LatLng(-34.0, 151.0)
         mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
