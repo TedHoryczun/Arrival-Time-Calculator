@@ -1,4 +1,4 @@
-package com.arrival.devlanding.arrivaltimecalc
+package com.arrival.devlanding.arrivaltimecalc.Maps
 
 
 interface MapsContract{

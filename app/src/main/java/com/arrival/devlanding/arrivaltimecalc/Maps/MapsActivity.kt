@@ -1,16 +1,15 @@
-package com.arrival.devlanding.arrivaltimecalc
+package com.arrival.devlanding.arrivaltimecalc.Maps
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.annotation.RequiresApi
-import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
 import android.util.Log
+import com.arrival.devlanding.arrivaltimecalc.R
+import com.arrival.devlanding.arrivaltimecalc.isPermissionGranted
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -24,14 +23,17 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.activity_maps.*
+import javax.inject.Inject
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsContract.view {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
+    MapsContract.view {
 
     private lateinit var mMap: GoogleMap
     lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_REQUEST_CODE = 0
-    val presenter: MapsContract.presenter by lazy { MapsPresenter(this) }
+
+    @Inject
+    lateinit var presenter: MapsContract.presenter
 
     val placeFragment: PlaceAutocompleteFragment by lazy {
         fragmentManager
@@ -48,6 +50,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsContract.view 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+        DaggerMapsComponent.builder()
+            .mapsModule(MapsModule(this)).build().inject(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         mapFragment.getMapAsync(this)
         presenter.init()
