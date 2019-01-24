@@ -1,5 +1,6 @@
 package com.arrival.devlanding.arrivaltimecalc.Maps
 
+import com.arrival.devlanding.arrivaltimecalc.Repository
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -9,8 +10,8 @@ class MapsModule(val activity: MapsActivity) {
 
     @Provides
     @Singleton
-    fun providesMapsPresenter(): MapsContract.presenter {
-        return MapsPresenter(activity)
+    fun providesMapsPresenter(repository: Repository): MapsContract.presenter {
+        return MapsPresenter(activity, repository)
     }
 
 }
